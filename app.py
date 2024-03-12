@@ -1,9 +1,35 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 from pose_format import Pose
 from pose_format.pose_visualizer import PoseVisualizer
 import requests
+import cv2
 
 app = Flask(__name__)
+
+
+
+def generate_frames():
+    vid = cv2.VideoCapture("pose.mp4")
+    while True:
+            
+        ## read the camera frame
+        success,frame=vid.read()
+        if not success:
+            break
+        else:
+            ret,buffer=cv2.imencode('.jpg',frame)
+            frame=buffer.tobytes()
+
+        yield(b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/video')
+def video():
+    # Generate the response with the video stream
+    response = Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Set the CORS headers to allow all origins
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route("/textToASL", methods=['GET'])
 def textToASL():
@@ -25,10 +51,14 @@ def textToASL():
         pose = Pose.read(response.content)
         v = PoseVisualizer(pose)
         v.save_video("pose.mp4", v.draw())
+        # for frame in v.draw():
+        
            
     else:
-        print(f"Error in Get Requests Error Code :{response.status_code} ") 
-    return "video"
+        print(f"Error in Get Requests Error Code :{response.status_code}") 
+    # return "video"
+    
+
 
 if __name__ == '__main__':
     app.run(debug=True)
