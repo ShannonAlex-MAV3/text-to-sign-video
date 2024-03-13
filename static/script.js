@@ -1,34 +1,35 @@
-const videoElement = document.getElementById('video-stream');
+function fetchFrames() {
+    const videoContainer = document.getElementById('video-container');
 
-// Function to update the image source with the video stream
-function updateVideoStream() {
-    fetch('http://127.0.0.1:5000/video') 
+    fetch('http://127.0.0.1:5000/video')
         .then(response => {
-            // console.log(response)
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            
-            
-            return response.blob();  // Convert the response to a Blob
-        })
-        .then(blob => {
-            
-            const blobUrl = URL.createObjectURL(blob);  // Create a URL for the Blob
-            
-            videoElement.src = blobUrl;  // Set the image source to the Blob URL
-            console.log(blobUrl)
+            const reader = response.body.getReader();
+
+            const readStream = () => {
+                reader.read()
+                    .then(({ done, value }) => {
+                        if (done) {
+                            console.log('Stream complete');
+                            return;
+                        }
+
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(new Blob([value], { type: 'image/jpeg' }));
+
+                        videoContainer.appendChild(img);
+                        
+                        // readStream(); // Continue reading next frame
+                    })
+                    .catch(error => {
+                        console.error('Error reading frame:', error);
+                    });
+            };
+
+            readStream(); // Start reading frames
         })
         .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('Error fetching frames:', error);
         });
 }
 
-updateVideoStream();
-
-// let img = document.getElementById('stream');
-
-// img.onerror = function() {
-//     img.src = '';
-//     setTimeout(() => img.src = 'http://127.0.0.1:5000/video', 1000);
-// };
+fetchFrames();
