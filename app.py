@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, send_file
 from pose_format import Pose
 from pose_format.pose_visualizer import PoseVisualizer
 import requests
@@ -7,12 +7,12 @@ import cv2
 app = Flask(__name__)
 
 
-
+# function to serve vid frames 
 def generate_frames():
     vid = cv2.VideoCapture("pose.mp4")
     while True:
             
-        ## read the camera frame
+        # read frame
         success,frame=vid.read()
         if not success:
             break
@@ -23,6 +23,7 @@ def generate_frames():
         yield(b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+# route to serve vid frames
 @app.route('/video')
 def video():
     # Generate the response with the video stream
@@ -31,6 +32,12 @@ def video():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+# test vid file endpoint
+@app.route('/pose')
+def pose():
+    return send_file('pose.mp4')
+
+# route to server vid file
 @app.route("/textToASL", methods=['GET'])
 def textToASL():
     inputText = request.args.get('inputText')
@@ -40,25 +47,14 @@ def textToASL():
     response = requests.get(apiForTextForASL)
     
     if(response.status_code == 200):
-        
-        # with open('downloaded_file.pose', 'wb') as file:
-        #     file.write(response.content)
-        
-        # with open(response.content, "rb") as poseFile:
-        #     pose = Pose.read(poseFile.read())
-    
         # read pose file  
         pose = Pose.read(response.content)
         v = PoseVisualizer(pose)
         v.save_video("pose.mp4", v.draw())
-        # for frame in v.draw():
-        
-           
+        return send_file('pose.mp4')    
     else:
         print(f"Error in Get Requests Error Code :{response.status_code}") 
-    # return "video"
     
-
 
 if __name__ == '__main__':
     app.run(debug=True)
