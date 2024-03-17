@@ -6,10 +6,11 @@ import cv2
 
 app = Flask(__name__)
 
+vid_name = "video.mp4"
 
 # function to serve vid frames 
 def generate_frames():
-    vid = cv2.VideoCapture("pose.mp4")
+    vid = cv2.VideoCapture(vid_name)
     while True:
             
         # read frame
@@ -35,14 +36,14 @@ def video():
 # test vid file endpoint
 @app.route('/pose')
 def pose():
-    return send_file('pose.mp4')
+    return send_file(vid_name)
 
 # route to server vid file
 @app.route("/textToASL", methods=['GET'])
 def textToASL():
     inputText = request.args.get('inputText')
     apiForTextForASL = f"https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text={inputText}&spoken=en&signed=ase"
-    print(inputText)
+    # print(inputText)
     
     response = requests.get(apiForTextForASL)
     
@@ -50,8 +51,8 @@ def textToASL():
         # read pose file  
         pose = Pose.read(response.content)
         v = PoseVisualizer(pose)
-        v.save_video("pose.mp4", v.draw())
-        return send_file('pose.mp4')    
+        v.save_video(vid_name, v.draw())
+        return send_file(vid_name)    
     else:
         print(f"Error in Get Requests Error Code :{response.status_code}") 
     
