@@ -1,3 +1,8 @@
+__author__ = "Mav3"
+__version__ = "1.0.0"
+__maintainer__ = "Mav3"
+__credits__ = "AmitMY"
+
 from flask import Flask, request, Response, send_file
 from pose_format import Pose
 from pose_format.pose_visualizer import PoseVisualizer
